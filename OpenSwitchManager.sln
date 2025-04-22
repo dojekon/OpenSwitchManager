@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchClient", "SwitchClient\SwitchClient.csproj", "{8D443644-6BAF-4A7E-9B5B-74FFBA3DB999}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestingFeatures", "TestingFeatures\TestingFeatures.csproj", "{53FC8901-0B3F-4CEE-9404-7A9E429B8DE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,9 +14,12 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{8D443644-6BAF-4A7E-9B5B-74FFBA3DB999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8D443644-6BAF-4A7E-9B5B-74FFBA3DB999}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D443644-6BAF-4A7E-9B5B-74FFBA3DB999}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D443644-6BAF-4A7E-9B5B-74FFBA3DB999}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53FC8901-0B3F-4CEE-9404-7A9E429B8DE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53FC8901-0B3F-4CEE-9404-7A9E429B8DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53FC8901-0B3F-4CEE-9404-7A9E429B8DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53FC8901-0B3F-4CEE-9404-7A9E429B8DE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

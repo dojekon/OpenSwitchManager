@@ -13,6 +13,8 @@ namespace SwitchClient {
         private readonly string Username;
         private readonly string Password;
         private string? AccessToken;
+
+        private int Units;
         public DLink(string ip, string username, string password) {
             this.IP = ip;
             this.Username = username;
@@ -49,7 +51,7 @@ namespace SwitchClient {
                 remote = remMatch.Groups[1].Value;
             }
 
-            string[] sequence = GetEncriptedRasswordSequence(sequence0 , remote);
+            string[] sequence = GetEncriptedRasswordSequence(sequence0, remote);
 
             string postData = $"sequence0={Uri.EscapeDataString(sequence[0])}" +
                               $"&sequence1={Uri.EscapeDataString(sequence[1])}" +
@@ -60,7 +62,7 @@ namespace SwitchClient {
             using (var handler = new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
             using (var client = new HttpClient(handler)) {
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                client.DefaultRequestHeaders.Add("Referer", loginPostUrl);
+                client.DefaultRequestHeaders.Add("Referer", $"http://{this.IP}/www/login.html)");
                 client.DefaultRequestHeaders.Add("Origin", $"http://{this.IP}");
 
                 var content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
@@ -85,39 +87,15 @@ namespace SwitchClient {
             seq[0] = sequence;
             switch (remote) {
                 case "0": {
-                        using var sha256 = SHA256.Create();
-                        using var sha1 = SHA1.Create();
-                        using var md5 = MD5.Create();
-
-                        seq[1] = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(this.Password))) + sequence)));
-                        seq[2] = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(this.Password))) + sequence)));
-                        seq[3] = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(this.Password))) + sequence)));
-
+                        seq[1] = DLinkCrypto.ComputeSequence1(this.Password, sequence);
+                        seq[2] = DLinkCrypto.ComputeSequence2(this.Password, sequence);
+                        seq[3] = DLinkCrypto.ComputeSequence3(this.Password, sequence);
                         break;
                     }
                 case "1": {
-                        byte[] key = Convert.FromBase64String(sequence);
-                        byte[] iv = Encoding.UTF8.GetBytes("0123456789abcdef");
-                        byte[] encrypted;
-
-                        using var sha256 = SHA256.Create();
-                        using var sha1 = SHA1.Create();
-                        using var md5 = MD5.Create();
-
-                        using (var aes = Aes.Create()) {
-                            aes.Mode = CipherMode.CBC;
-                            aes.Padding = PaddingMode.PKCS7;
-                            aes.Key = key;
-                            aes.IV = iv;
-
-                            using var encryptor = aes.CreateEncryptor();
-                            byte[] plainText = Encoding.UTF8.GetBytes(this.Password);
-                            encrypted = encryptor.TransformFinalBlock(plainText, 0, plainText.Length);
-                        }
-
-                        seq[1] = Convert.ToBase64String(encrypted);
-                        seq[2] = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(this.Password))) + sequence)));
-                        seq[3] = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(this.Password))) + sequence)));
+                        seq[1] = DLinkCrypto.ComputeEncryptedSequence1(this.Password, sequence);
+                        seq[2] = DLinkCrypto.ComputeSequence2(this.Password, sequence);
+                        seq[3] = DLinkCrypto.ComputeSequence3(this.Password, sequence);
 
                         break;
                     }
@@ -125,6 +103,54 @@ namespace SwitchClient {
                     throw new ArgumentException("Argument remote: Invalid value - " + remote);
             }
             return seq;
+        }
+
+        public async Task<bool> GetUnits() {
+
+        }
+    }
+
+    static class DLinkCrypto {
+        public static string ComputeSequence1(string password, string sequence) {
+            using var sha256 = SHA256.Create();
+            var inner = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(password)));
+            var combined = Encoding.UTF8.GetBytes(inner + sequence);
+            return Convert.ToBase64String(sha256.ComputeHash(combined));
+        }
+
+        public static string ComputeSequence2(string password, string sequence) {
+            using var sha1 = SHA1.Create();
+            using var sha256 = SHA256.Create();
+            var inner = Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(password)));
+            var combined = Encoding.UTF8.GetBytes(inner + sequence);
+            return Convert.ToBase64String(sha256.ComputeHash(combined));
+        }
+
+        public static string ComputeSequence3(string password, string sequence) {
+            using var md5 = MD5.Create();
+            using var sha256 = SHA256.Create();
+            var inner = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(password)));
+            var combined = Encoding.UTF8.GetBytes(inner + sequence);
+            return Convert.ToBase64String(sha256.ComputeHash(combined));
+        }
+
+        public static string ComputeEncryptedSequence1(string password, string sequence) {
+            byte[] key = Convert.FromBase64String(sequence);
+            byte[] iv = Encoding.UTF8.GetBytes("0123456789abcdef");
+            byte[] encrypted;
+
+            using (var aes = Aes.Create()) {
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                aes.Key = key;
+                aes.IV = iv;
+
+                using var encryptor = aes.CreateEncryptor();
+                byte[] plainText = Encoding.UTF8.GetBytes(password);
+                encrypted = encryptor.TransformFinalBlock(plainText, 0, plainText.Length);
+            }
+
+            return Convert.ToBase64String(encrypted);
         }
     }
 }
